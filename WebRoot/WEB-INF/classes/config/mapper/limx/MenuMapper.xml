@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.dao.MenuDAO">
+	<resultMap id="MenuMap" type="Menu">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="menu_name" property="menuName" jdbcType="VARCHAR" />
+		<result column="url" property="url" jdbcType="VARCHAR" />
+		<result column="icon" property="icon" jdbcType="VARCHAR" />
+		<result column="menu_desc" property="desc" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+		<result column="display" property="display" jdbcType="INTEGER" />
+		<result column="insert_time" property="insertTime" jdbcType="DATE"
+			javaType="java.util.Date" />
+	</resultMap>
+
+	<!-- 新增权限 -->
+	<insert id="insertMenu" parameterType="Menu" keyProperty="id">
+		insert
+		into sys_menu
+		(
+
+		parent_id,menu_name,display,state,url,icon,menu_desc,insert_time
+
+		)
+		values
+		(
+
+		#{parentId},#{menuName},#{display},#{state},#{url},#{icon},#{desc},#{insertTime}
+
+		)
+
+	</insert>
+
+	<!--新增功能、角色关联 -->
+	<insert id="insertMenuRole" parameterType="int">
+		insert
+		into
+		sys_menu_role
+		(
+
+		menu_id,role_id
+
+		)
+		values
+		(
+
+		#{menuId},#{roleId}
+
+		)
+
+	</insert>
+
+
+
+	<!-- 删除功能列表 -->
+	<delete id="deleteMenu" parameterType="int">
+		delete from
+		sys_menu where
+		id = #{id}
+	</delete>
+
+	<!-- 删除角色关联信息 -->
+	<delete id="deleteMenuRole" parameterType="int">
+		delete from
+		sys_menu_role where menu_id = #{menuId}
+	</delete>
+
+	<!-- 删除角色功能关联信息 -->
+	<delete id="deleteRoleMenu" parameterType="int">
+		delete from
+		sys_menu_role where role_id = #{roleId}
+	</delete>
+
+
+	<!-- 修改功能状态 -->
+	<update id="updateState" parameterType="int" flushCache="true">
+		update
+		sys_menu
+		set state =
+		#{state}
+		where id =
+		#{id}
+	</update>
+
+	<!-- 修改menu信息 -->
+	<update id="updateMenu" parameterType="Menu" flushCache="true">
+		update
+		sys_menu
+		set parent_id = #{parentId},
+		menu_name =
+		#{menuName},
+		state =
+		#{state},
+		display = #{display},
+		url =
+		#{url},
+		menu_desc = #{desc}
+		where id
+		= #{id}
+	</update>
+
+
+
+
+	<!-- 加载menu -->
+	<select id="findMenu" parameterType="int" resultMap="MenuMap">
+		SELECT *
+		from sys_menu where id=#{id}
+	</select>
+
+
+	<!-- 根据角色查询权限 -->
+	<select id="findAllEffectiveMenusbyRoleId" parameterType="int"
+		resultMap="MenuMap">
+		SELECT DISTINCT(f.url),f.menu_name,f.id,f.parent_id
+		from
+		sys_role
+		r,sys_menu
+		f,sys_menu_role mr
+		where r.id=mr.role_id
+		and
+		f.id=mr.menu_id
+		and f.state=1
+		and
+		r.id= #{roleId}
+	</select>
+
+	<!-- 查询当前用户的功能列表 -->
+	<select id="findAllEffectiveMenusbyLoginName" parameterType="java.lang.String"
+		resultMap="MenuMap">
+
+		SELECT
+		DISTINCT(f.id),f.parent_id,f.menu_name,f.url,f.menu_desc,f.icon
+		from
+		sys_menu f
+		,sys_user u,sys_role r,sys_user_role
+		ur,sys_menu_role rm
+		where f.state=1
+		and f.display=1
+		and
+		f.id=rm.menu_id
+		and
+		rm.role_id=r.id
+		and
+		r.id=ur.role_id
+		and r.state=1
+		and ur.user_id=u.id
+		and
+		u.display_name=#{displayName}
+		ORDER BY
+		f.menu_desc
+	</select>
+
+	<!-- 所有功能权限列表 -->
+	<select id="findMenuList" resultMap="MenuMap">
+		SELECT * from
+		sys_menu
+		order
+		by id
+	</select>
+
+	<!-- 所有有效的功能权限列表 -->
+	<select id="findEffectiveMenuList" resultMap="MenuMap">
+		SELECT * from
+		sys_menu where state=1
+		order by id
+	</select>
+
+	<!-- 查询当前url请求 -->
+	<select id="findEffectiveMenusbyUrl" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		SELECT id from sys_menu where state=1 and url like
+		CONCAT(#{url},'%')
+	</select>
+
+	<!-- 根据角色获得相应的功能权限Id -->
+	<select id="findMenuTree" parameterType="int" resultType="int">
+		SELECT
+		menu_id from sys_menu_role where role_id=#{roleId}
+		order by
+		menu_id
+	</select>
+
+	<!-- 用户条件查询 -->
+	<select id="findMenuListByQuery" parameterType="Menu" resultMap="MenuMap">
+		SELECT * from sys_menu where id!=0
+
+		<if test="menuName!=null and menuName!='' ">
+			and menu_name like CONCAT(CONCAT('%',
+			#{menuName}),'%')
+		</if>
+		<if test="url!= null and url!= '' ">
+			and url like CONCAT(CONCAT('%', #{url}),'%')
+		</if>
+
+		order by id
+	</select>
+
+	<!-- 查询孩子节点 -->
+	<select id="findMenubyParentId" parameterType="int" resultMap="MenuMap">
+		SELECT * from sys_menu where parent_id=#{id}
+	</select>
+
+	<!-- 查询孩子节点 -->
+	<select id="findMenubyParentIdAndFunctionName" parameterType="Menu"
+		resultMap="MenuMap">
+		SELECT * from sys_menu where
+		parent_id=#{parentId} and
+		menu_name=#{menuName}
+	</select>
+
+
+
+
+</mapper>

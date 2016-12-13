@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.dao.RoleDAO">
+	<resultMap id="RoleMap" type="Role">
+		<result column="id" property="id" jdbcType="INTEGER" />
+		<result column="role_name" property="roleName" jdbcType="VARCHAR" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+		<result column="insert_time" property="insertTime" jdbcType="DATE"
+			javaType="java.util.Date" />
+	</resultMap>
+	<insert id="insertRole" parameterType="Role" keyProperty="id">
+		insert
+		into sys_role
+		(
+
+		role_name,state,insert_time,description
+
+		)
+		values
+		(
+
+		#{roleName},#{state},#{insertTime},#{description}
+
+		)
+
+	</insert>
+
+	<update id="updateRole" parameterType="Role" flushCache="true">
+		update
+		sys_role set
+		role_name=#{roleName},description=#{description},state=#{state} where
+		id=
+		#{id}
+	</update>
+
+	<update id="updateRoleState" parameterType="java.util.Map"
+		flushCache="true">
+		update sys_role set state=#{state} where id= #{id}
+	</update>
+
+	<!-- 删除角色功能关联信息 -->
+	<delete id="deleteMenuRole" parameterType="int">
+		delete from
+		sys_menu_role where role_id = #{roleId}
+	</delete>
+
+	<!-- 删除角色信息 -->
+	<delete id="deleteRole" parameterType="int">
+		delete from sys_role where
+		id = #{roleId}
+	</delete>
+
+	<!-- 根据roleID查询角色信息 -->
+	<select id="findRoleById" parameterType="int" resultMap="RoleMap">
+		select
+		id,role_name,state
+		from sys_role where id=#{roleId}
+	</select>
+
+
+	<!-- 根据角色名称查询角色信息 -->
+	<select id="findRoleByRoleName" parameterType="java.lang.String"
+		resultMap="RoleMap">
+		select
+		id,role_name,state
+		from sys_role where
+		role_name=#{roleName}
+	</select>
+
+
+
+
+	<select id="findAllEffectiveRoles" resultMap="RoleMap">
+		select
+		id,role_name,description
+		from sys_role where state=1
+	</select>
+
+
+	<select id="findRolesByDisplayName" parameterType="java.lang.String"
+		resultMap="RoleMap">
+		<!-- SELECT DISTINCT(r.id) from sys_user u,sys_role r,sys_user_role ur 
+			where u.id=ur.user_id and r.id=ur.role_id and u.state=1 and r.state=1 and 
+			u.login_name=#{loginName} -->
+		SELECT DISTINCT(r.role_name) from sys_user u,sys_role
+		r,sys_user_role
+		ur
+		where
+		u.id=ur.user_id and r.id=ur.role_id
+		and
+		u.state=1
+		and r.state=1
+		and u.display_name=#{displayname}
+	</select>
+	<select id="findRolesByUserId" parameterType="int" resultMap="RoleMap">
+		<!-- SELECT DISTINCT(r.id) from sys_user u,sys_role r,sys_user_role ur 
+			where u.id=ur.user_id and r.id=ur.role_id and u.state=1 and r.state=1 and 
+			u.login_name=#{loginName} -->
+		SELECT DISTINCT(r.id),r.role_name,r.description from sys_user u,sys_role
+		r,sys_user_role
+		ur
+		where
+		u.id=ur.user_id and r.id=ur.role_id
+		and
+		u.state=1
+		and r.state=1
+		and u.id=#{userId}
+	</select>
+	<!-- 不论角色是否启用，在功能拦截时候就有效 -->
+	<select id="findRolesByMenuId" parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+		SELECT DISTINCT(r.id) from sys_role
+		r,sys_menu_role fr
+		where
+		r.id=fr.role_id
+		and
+		fr.menu_id= #{menuId}
+	</select>
+
+
+
+	<!-- 所有角色查询 -->
+	<select id="findRoleList" parameterType="java.util.Map"
+		resultMap="RoleMap">
+		select id,role_name,state,description
+		from sys_role
+		<where>
+			<if test="roleName!=null and roleName!='' ">
+				role_name like CONCAT(CONCAT('%', #{roleName}),'%')
+			</if>
+		</where>
+		order by id
+	</select>
+
+	<!-- 所有角色查询 -->
+	<select id="findRolePageList" parameterType="java.lang.String"
+		resultMap="RoleMap">
+		select id,role_name,state,description
+		from sys_role
+		<where>
+			<if test="roleName!=null and roleName!='' ">
+				role_name like CONCAT(CONCAT('%', #{roleName}),'%')
+			</if>
+		</where>
+		order by id
+	</select>
+	<delete id="deleteRoleMenu" parameterType="int">
+		delete from
+		sys_menu_role where role_id=#{roleId}
+	</delete>
+	<insert id="insertRoleMenu" parameterType="int">
+		insert into
+		sys_menu_role(menu_id,role_id) values(#{menuId},#{roleId})
+	</insert>
+</mapper>

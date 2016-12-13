@@ -1,0 +1,11 @@
+@CHARSET "UTF-8";
+
+
+
+.collapse.glyphicon-chevron-toggle, .glyphicon-chevron-toggle:before {
+	content: "\e113";
+}
+
+.collapsed.glyphicon-chevron-toggle:before {
+	content: "\e114";
+}
